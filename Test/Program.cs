@@ -37,6 +37,8 @@ let items := [1,2,3]
 println(format('len({0}) = {1}', items, len(items)))
 for(let i: items)
     print(i)
+println(not true or true)
+println(((((true)))))
 ";
 
 var ts = new Lexer().Lex(p).ToList();

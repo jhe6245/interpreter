@@ -12,7 +12,11 @@ public record BeginToken(char C) : Token(C.ToString());
 
 public record EndToken(char C) : Token(C.ToString());
 
-public record ArithmeticToken(char C) : Token(C.ToString());
+public abstract record MathToken(string Op) : Token(Op);
+
+public record ArithmeticToken(string Op) : MathToken(Op);
+
+public record BooleanToken(string Op) : MathToken(Op);
 
 public record ArrowToken(string Text) : Token(Text);
 

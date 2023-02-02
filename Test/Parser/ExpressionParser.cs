@@ -1,9 +1,8 @@
-﻿using System.Runtime.CompilerServices;
-using Test.Lexer;
+﻿using Test.Lexer;
 
 namespace Test.Parser;
 
-public class ExpressionParser : IParse<Expression> // math
+public class ExpressionParser : IParse<Expression> // math + bool logic
 {
     public required IParse<Expression> Value { get; init; }
 
@@ -20,9 +19,9 @@ public class ExpressionParser : IParse<Expression> // math
             var o = operators.Pop();
             var latter = operands.Pop();
             if (o is BinaryOp)
-                operands.Push(new BiOperator(o.C.ToString(), operands.Pop(), latter));
+                operands.Push(new BiOperator(o.Op, operands.Pop(), latter));
             else
-                operands.Push(new UnaryOperator(o.C.ToString(), latter));
+                operands.Push(new UnaryOperator(o.Op, latter));
         }
 
         void HandleOp(Operator op)
@@ -58,8 +57,8 @@ public class ExpressionParser : IParse<Expression> // math
                         operands.Push(ok.Result);
                     break;
 
-                case Unary { P: var p1 }:
-                    HandleOp(new UnaryOp('-'));
+                case Unary { Op: var c, P: var p1 }:
+                    HandleOp(new UnaryOp(c));
                     HandleP(p1);
                     break;
             }
@@ -86,9 +85,7 @@ public class ExpressionParser : IParse<Expression> // math
         {
             var bp = (ts switch
             {
-                [ArithmeticToken { C: var c }, ..] when "+-*/^".Contains(c) =>
-                    new Binary(c).Ok(ts.Skip(1)),
-
+                [MathToken { Text: var op }, ..] => new Binary(op).Ok(ts.Skip(1)),
                 _ => ts[0].Err<Binary>()
             }).FlatMap(b => ParseP(b.Remaining).FlatMap(p => (b.Result, p.Result).Ok(p.Remaining)));
 
@@ -119,40 +116,53 @@ public class ExpressionParser : IParse<Expression> // math
                 _ => e.Remaining.First().Err<Parens>()
             }),
 
-            [ArithmeticToken { C: var c }, ..] when "^-".Contains(c) => ParseP(ts.Skip(1))
-                .FlatMap(e => new Unary(c, e.Result).Ok(e.Remaining)),
+            [MathToken { Op: Lang.Boolean.Not or Lang.Arithmetic.Sub } t, ..] => ParseP(ts.Skip(1))
+                .FlatMap(e => new Unary(t.Op, e.Result).Ok(e.Remaining)),
             _ => ts[0].Err<P>()
         };
     }
 
-    private abstract record Operator(char C) : IComparable<Operator>
+    private abstract record Operator(string Op) : IComparable<Operator>
     {
         public abstract int CompareTo(Operator? other);
 
-        protected static int Precedence(char o) => "+-*/^".IndexOf(o) / 2;
+        protected static bool RightAssoc(string Op) => Op is Lang.Arithmetic.Pow or Lang.Boolean.Not;
+
+        protected static int Precedence(string op) =>
+            op switch
+            {
+                Lang.Boolean.Or => -3,
+                Lang.Boolean.And => -2,
+                Lang.Boolean.Not => -1,
+
+                Lang.Arithmetic.Add or Lang.Arithmetic.Sub => 1,
+                Lang.Arithmetic.Mul or Lang.Arithmetic.Div => 2,
+                Lang.Arithmetic.Pow => 3,
+                _ => throw new ArgumentException(null, nameof(op))
+            };
     }
 
-    private record UnaryOp(char C) : Operator(C)
+    private record UnaryOp(string Op) : Operator(Op)
     {
         public override int CompareTo(Operator? other)
         {
             if (other is BinaryOp)
-                return Precedence(C) >= Precedence(other.C) ? 1 : 0;
+                return Precedence(Op) >= Precedence(other.Op) ? 1 : 0;
 
-            return Precedence(C) > Precedence(other!.C) ? 1 : 0;
+            return Precedence(Op) > Precedence(other!.Op) ? 1 : 0;
         }
     }
 
-    private record BinaryOp(char B) : Operator(B)
+    private record BinaryOp(string Op) : Operator(Op)
     {
         public override int CompareTo(Operator? other)
         {
             if (other is BinaryOp)
             {
-                return (Precedence(B) > Precedence(other.C)) switch
+                return Precedence(Op).CompareTo(Precedence(other.Op)) switch
                 {
-                    true => 1,
-                    _ when B != '^' && Precedence(B) == Precedence(other.C) => 1,
+                    > 0 => 1,
+                    0 when !RightAssoc(Op) => 1,
                     _ => -1
                 };
             }
@@ -169,7 +179,7 @@ public class ExpressionParser : IParse<Expression> // math
 
     private record Parens(E E) : P;
 
-    private record Unary(char Op, P P) : P;
+    private record Unary(string Op, P P) : P;
 
-    private record Binary(char Op);
+    private record Binary(string Op);
 }

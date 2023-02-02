@@ -25,18 +25,28 @@ public class Interpreter
         Lambda l => new Function("λ", l.Parameters, _ => Eval(l.Body)),
         Invocation c => Call(c),
         ListInit l => l.Items.Select(Eval),
-        BiOperator bo => (bo.Operator, (double)Eval(bo.Left), (double)Eval(bo.Right)) switch
+        BiOperator bo => (bo.Operator, Eval(bo.Left)) switch
         {
-            ("+", var a, var b) => a + b,
-            ("-", var a, var b) => a - b,
-            ("/", var a, var b) => a / b,
-            ("*", var a, var b) => a * b,
-            ("^", var a, var b) => Math.Pow(a, b),
-            _ => throw new InvalidOperationException()
+            (Lang.Boolean.Or, true) => true,
+            (Lang.Boolean.Or, false) => (bool)Eval(bo.Right),
+            (Lang.Boolean.And, true) => (bool)Eval(bo.Right),
+            (Lang.Boolean.And, false) => false,
+
+            var (op, left) => (op, left, Eval(bo.Right)) switch
+            {
+                ("+", double a, double b) => a + b,
+                ("-", double a, double b) => a - b,
+                ("/", double a, double b) => a / b,
+                ("*", double a, double b) => a * b,
+                ("^", double a, double b) => Math.Pow(a, b),
+
+                _ => throw new InvalidOperationException()
+            }
         },
-        UnaryOperator uo => (uo.Operator, (double)Eval(uo.Arg)) switch
+        UnaryOperator uo => (uo.Operator, Eval(uo.Arg)) switch
         {
-            ("-", var x) => -x,
+            (Lang.Boolean.Not, bool b) => !b,
+            (Lang.Arithmetic.Sub, double x) => -x,
             _ => throw new InvalidOperationException()
         },
         _ => throw new InvalidOperationException()

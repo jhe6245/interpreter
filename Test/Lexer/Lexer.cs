@@ -26,6 +26,8 @@ public class Lexer
                     var word = reader.ReadWhile(c => char.IsLetterOrDigit(c) || c == '_');
                     if (Lang.Keyword.Contains(word))
                         yield return new KeywordToken(word);
+                    else if (Lang.Boolean.Contains(word))
+                        yield return new BooleanToken(word);
                     else
                         yield return new IdentifierToken(word);
                     break;
@@ -63,7 +65,7 @@ public class Lexer
                             break;
                         }
                     } 
-                    yield return new ArithmeticToken(character);
+                    yield return new ArithmeticToken(character.ToString());
                     break;
 
                 case ';':

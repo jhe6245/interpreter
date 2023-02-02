@@ -2,9 +2,30 @@
 
 public static class Lang
 {
-    public static class Operator
+    public static class Arithmetic
     {
+        public const string Pow = "^";
+        public const string Mul = "*";
+        public const string Div = "/";
         public const string Add = "+";
+        public const string Sub = "-";
+
+        public static bool Contains(string str) => new[]
+        {
+            Pow, Mul, Div, Add, Sub
+        }.Contains(str);
+    }
+
+    public static class Boolean
+    {
+        public const string Not = "not";
+        public const string And = "and";
+        public const string Or = "or";
+
+        public static bool Contains(string str) => new[]
+        {
+            Not, And, Or
+        }.Contains(str);
     }
 
     public static class Keyword
@@ -24,9 +45,10 @@ public static class Lang
         }.Contains(str);
     }
 
-    public const string StatementDelimiter = ";";
+    public const string Equal = "=";
 
     public const string Assign = ":=";
+    
     public const char StringDelimiter = '\'';
 
     public const string ExprBegin = "(";
