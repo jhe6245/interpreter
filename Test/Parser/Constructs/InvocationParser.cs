@@ -4,7 +4,7 @@ namespace Test.Parser.Constructs;
 
 public class InvocationParser : IParse<Invocation>
 {
-    public required Func<IParse<Expression>> Expression { get; init; }
+    public required Func<IParse<IExpression>> Expression { get; init; }
 
     public IResult<IParsed<Invocation>> Accept(IEnumerable<Token> tokens)
     {
@@ -13,7 +13,7 @@ public class InvocationParser : IParse<Invocation>
         if (ts is not [IdentifierToken func, BeginToken { C: '(' }, ..])
             return ts[0].Err<Invocation>();
 
-        var argExpressions = new List<Expression>();
+        var argExpressions = new List<IExpression>();
 
         ts.RemoveRange(0, 2);
         while (true)
@@ -23,11 +23,11 @@ public class InvocationParser : IParse<Invocation>
 
             switch (Expression().Accept(ts))
             {
-                case IOk<IParsed<Expression>> ok:
+                case IOk<IParsed<IExpression>> ok:
                     argExpressions.Add(ok.Result.Result);
                     ts = ok.Result.Remaining.ToList();
                     break;
-                case IErr<IParsed<Expression>> err:
+                case IErr<IParsed<IExpression>> err:
                     return err.To<IParsed<Invocation>>();
             }
 

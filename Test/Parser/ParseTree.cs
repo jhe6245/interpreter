@@ -1,20 +1,21 @@
 ﻿namespace Test.Parser;
-public record Program(IEnumerable<Statement> Statements);
+public record Program(IEnumerable<IStatement> Statements);
 
-public abstract record Statement;
+public interface IStatement {}
 
-public abstract record Expression : Statement;
+public interface IExpression : IStatement {}
 
-public record Evaluation(string Identifier) : Expression;
-public record Assignment(string Identifier, Expression Expression) : Expression;
-public record Const(object Value) : Expression;
-public record Invocation(string Identifier, IEnumerable<Expression> Arguments) : Expression;
-public record Lambda(IEnumerable<string> Parameters, Expression Body) : Expression;
-public record UnaryOperator(string Operator, Expression Arg) : Expression;
-public record BiOperator(string Operator, Expression Left, Expression Right) : Expression;
-public record ListInit(IEnumerable<Expression> Items) : Expression;
+public record Evaluation(string Identifier) : IExpression;
+public record Assignment(string Identifier, IExpression Expression) : IExpression;
+public record Const(object Value) : IExpression;
+public record Invocation(string Identifier, IEnumerable<IExpression> Arguments) : IExpression;
+public record Lambda(IEnumerable<string> Parameters, IExpression Body) : IExpression;
+public record UnaryOperator(string Operator, IExpression Arg) : IExpression;
+public record BiOperator(string Operator, IExpression Left, IExpression Right) : IExpression;
+public record ListInit(IEnumerable<IExpression> Items) : IExpression;
 
-public record Initialization(string Identifier, Expression Expression) : Statement;
-public record Conditional(Expression Condition, Statement Statement) : Statement;
-public record Iteration(string Iterator, Expression Enumerable, Statement Statement) : Statement;
-public record Block(IEnumerable<Statement> Statements) : Statement;
+public record Initialization(string Identifier, IExpression Expression) : IStatement;
+public record Conditional(IExpression Condition, IStatement Statement) : IStatement;
+public record Iteration(string Iterator, IExpression Enumerable, IStatement Statement) : IStatement;
+public record Block(IEnumerable<IStatement> Statements) : IStatement;
+public record ExpressionBlock(IEnumerable<IStatement> Body, IExpression Return) : Block(Body.Append(Return)), IExpression;

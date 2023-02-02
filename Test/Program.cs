@@ -42,6 +42,17 @@ println(not true or true)
 println(((((true)))))
 ";
 
+p = @"
+let choose := (cond, ifTrue, ifFalse) -> {
+    let result := ifFalse
+    if(cond)
+        result := ifTrue
+    result
+}
+println(choose(true, 'true', 'false'))
+println(choose(false, 'true', 'false'))
+";
+
 var ts = new Lexer().Lex(p).ToList();
 
 foreach (var (t, i) in ts.Select((t, i) => (t, i)))

@@ -4,7 +4,7 @@ namespace Test.Parser.Constructs;
 
 public class AssignmentParser : IParse<Assignment>
 {
-    public required Func<IParse<Expression>> Expression { get; init; }
+    public required Func<IParse<IExpression>> Expression { get; init; }
 
     public IResult<IParsed<Assignment>> Accept(IEnumerable<Token> tokens)
     {

@@ -5,8 +5,8 @@ namespace Test;
 
 public class ParserBuilder
 {
-    private readonly IParse<Statement> stmt;
-    private readonly IParse<Expression> expression;
+    private readonly IParse<IExpression> expression;
+    private readonly IParse<IStatement> stmt;
 
     public ParserBuilder()
     {
@@ -19,37 +19,45 @@ public class ParserBuilder
             Expression = () => expression!,
             Stmt = () => stmt!
         };
+        var block = new BlockParser
+        {
+            Statement = () => stmt!
+        };
 
         expression = new ExpressionParser
         {
             ValueExpression = new NonMathExpressionParser
             {
+                Lambda = new LambdaParser
+                {
+                    Expression = () => expression!
+                },
                 List = new ListParser
                 {
-                    Expression = () => expression!,
+                    Expression = () => expression!
                 },
                 Assignment = assignment,
                 Invocation = new InvocationParser
                 {
-                    Expression = () => expression!,
-                }
+                    Expression = () => expression!
+                },
+                Block = block
             }
-        }; 
-        
+        };
+
         stmt = new StatementParser
         {
             Conditional = conditional,
+            Block = block,
             Initialization = new InitParser { Assignment = assignment },
             Expression = expression,
             Iteration = new LoopParser { Expression = expression, Stmt = () => stmt! }
         };
     }
 
-    public IParse<Parser.Program> Build()
-    {
-        return new Parser.Parser
+    public IParse<Parser.Program> Build() =>
+        new Parser.Parser
         {
             Stmt = stmt
         };
-    }
 }

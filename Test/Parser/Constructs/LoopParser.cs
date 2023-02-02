@@ -4,8 +4,8 @@ namespace Test.Parser.Constructs;
 
 public class LoopParser : IParse<Iteration>
 {
-    public required IParse<Expression> Expression { get; init; }
-    public required Func<IParse<Statement>> Stmt { get; init; }
+    public required IParse<IExpression> Expression { get; init; }
+    public required Func<IParse<IStatement>> Stmt { get; init; }
 
     public IResult<IParsed<Iteration>> Accept(IEnumerable<Token> tokens)
     {

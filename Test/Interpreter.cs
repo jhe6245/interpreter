@@ -17,7 +17,7 @@ public class Interpreter
         stack = new(new[] { builtIns, new() });
     }
 
-    public object Eval(Expression expr) => expr switch
+    public object Eval(IExpression expr) => expr switch
     {
         Const c => c.Value is string s && double.TryParse(s, out var d) ? d : c.Value,
         //Arithmetic a => (double)Eval(a.Left) + (double)Eval(a.Right),
@@ -49,6 +49,7 @@ public class Interpreter
             (Lang.Arithmetic.Sub, double x) => -x,
             _ => throw new InvalidOperationException()
         },
+        ExpressionBlock eb => ExecEval(eb),
         _ => throw new InvalidOperationException()
     };
 
@@ -58,7 +59,17 @@ public class Interpreter
             Execute(statement);
     }
 
-    public void Execute(Statement statement)
+    public object ExecEval(ExpressionBlock expressionBlock)
+    {
+        stack.Push(new());
+        foreach (var s in expressionBlock.Body)
+            Execute(s);
+        var ret = Eval(expressionBlock.Return);
+        stack.Pop();
+        return ret;
+    }
+
+    public void Execute(IStatement statement)
     {
         switch (statement)
         {

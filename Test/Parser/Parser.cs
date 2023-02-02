@@ -4,11 +4,11 @@ namespace Test.Parser;
 
 public class Parser : IParse<Program>
 {
-    public required IParse<Statement> Stmt { get; init; }
+    public required IParse<IStatement> Stmt { get; init; }
 
     public IResult<IParsed<Program>> Accept(IEnumerable<Token> tokens)
     {
-        List<Statement> statements = new();
+        List<IStatement> statements = new();
 
         var l = tokens.ToList();
 
@@ -16,11 +16,11 @@ public class Parser : IParse<Program>
         {
             switch (Stmt.Accept(l))
             {
-                case IOk<IParsed<Statement>> ok:
+                case IOk<IParsed<IStatement>> ok:
                     statements.Add(ok.Result.Result);
                     l = ok.Result.Remaining.ToList();
                     break;
-                case IErr<IParsed<Statement>> err:
+                case IErr<IParsed<IStatement>> err:
                     return err.To<IParsed<Program>>();
             }
         }

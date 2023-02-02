@@ -32,16 +32,20 @@ public static class CommonExt
         return b.ToString();
     }
 
-    public static string Pretty(this object? o) => o switch
+    public static string Pretty(this object? o, int maxDepth = 10) => o switch
     {
+        _ when maxDepth == 0 => "\\...\\",
         null => "\\null\\",
         string s => s,
-        System.Collections.IEnumerable e => $"[ {string.Join(", ", e.Cast<object>().Select(Pretty))} ]",
+        Type t => t.ToString(),
+        System.Collections.IEnumerable e => $"[ {string.Join(", ", e.Cast<object>().Select(v => v.Pretty(maxDepth - 1)))} ]",
 
         _ => o.GetType() switch
         {
-            { IsPrimitive: true } or { IsEnum: true } => o.ToString() ?? "",
-            var t => $"{t.Name} {{ {string.Join(", ", t.GetProperties().Select(p => $"{p.Name} = {p.GetValue(o).Pretty()}"))} }}"
+            { IsPrimitive: true } or { IsEnum: true }  => o.ToString() ?? "",
+            var t => $"{t.Name} {{ {string.Join(", ", t.GetProperties()
+                                                       .Where(p => p.GetIndexParameters().Length == 0)
+                                                       .Select(p => $"{p.Name} = {p.GetValue(o).Pretty(maxDepth - 1)}"))} }}"
         }
     };
 }

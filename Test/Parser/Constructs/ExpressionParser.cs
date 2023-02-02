@@ -2,17 +2,17 @@
 
 namespace Test.Parser.Constructs;
 
-public class ExpressionParser : IParse<Expression> // math + bool logic
+public class ExpressionParser : IParse<IExpression> // math + bool logic
 {
-    public required IParse<Expression> ValueExpression { get; init; }
+    public required IParse<IExpression> ValueExpression { get; init; }
 
-    public IResult<IParsed<Expression>> Accept(IEnumerable<Token> tokens) =>
+    public IResult<IParsed<IExpression>> Accept(IEnumerable<Token> tokens) =>
         ParseMath(tokens).FlatMap(e => ShuntingYard(e.Result).FlatMap(expr => expr.Ok(e.Remaining)));
 
-    private static IResult<Expression> ShuntingYard(MathExpr expr)
+    private static IResult<IExpression> ShuntingYard(MathExpr expr)
     {
         var operators = new Stack<Operator>();
-        var operands = new Stack<Expression>();
+        var operands = new Stack<IExpression>();
 
         void Collect()
         {
@@ -53,7 +53,7 @@ public class ExpressionParser : IParse<Expression> // math + bool logic
                     break;
 
                 case Parens { MathExpr: var e }:
-                    if (ShuntingYard(e) is IOk<Expression> ok)
+                    if (ShuntingYard(e) is IOk<IExpression> ok)
                         operands.Push(ok.Result);
                     break;
 
@@ -107,7 +107,7 @@ public class ExpressionParser : IParse<Expression> // math + bool logic
 
         return ts switch
         {
-            _ when ValueExpression.Accept(ts) is IOk<IParsed<Expression>> ok =>
+            _ when ValueExpression.Accept(ts) is IOk<IParsed<IExpression>> ok =>
                 ok.FlatMap(e => new Val(e.Result).Ok(e.Remaining)),
 
             [BeginToken { C: '(' }, ..] => ParseMath(ts.Skip(1)).FlatMap(e => e.Remaining.ToArray() switch
@@ -174,7 +174,7 @@ public class ExpressionParser : IParse<Expression> // math + bool logic
 
     private abstract record BiOperand;
 
-    private record Val(Expression V) : BiOperand;
+    private record Val(IExpression V) : BiOperand;
 
     private record Parens(MathExpr MathExpr) : BiOperand;
 

@@ -4,8 +4,8 @@ namespace Test.Parser.Constructs;
 
 public class IfParser : IParse<Conditional>
 {
-    public required Func<IParse<Expression>> Expression { get; init; }
-    public required Func<IParse<Statement>> Stmt { get; init; }
+    public required Func<IParse<IExpression>> Expression { get; init; }
+    public required Func<IParse<IStatement>> Stmt { get; init; }
 
     public IResult<IParsed<Conditional>> Accept(IEnumerable<Token> tokens)
     {
