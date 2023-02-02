@@ -11,7 +11,7 @@ public class Interpreter
     {
         var builtIns = new[]
         {
-            BuiltInLen(), BuiltInMap(), BuiltInPrint()
+            BuiltInLen(), BuiltInMap(), BuiltInPrint(), BuiltInPrintLine(), BuiltInFormat()
         }.ToDictionary(f => f.Name, f => (object)f);
 
         stack = new(new[] { builtIns, new() });
@@ -71,12 +71,17 @@ public class Interpreter
                 break;
             case Iteration i:
                 var enumerable = ((IEnumerable)Eval(i.Enumerable)).Cast<object>();
+                var initIterator = true;
                 foreach (var item in enumerable)
                 {
-                    stack.Peek()[i.Iterator] = item;
+                    if(initIterator)
+                        SetNew(i.Iterator, item);
+                    else
+                        ReSet(i.Iterator, item);
+
+                    initIterator = false;
                     Execute(i.Statement);
                 }
-
                 break;
             default:
                 throw new InvalidOperationException();
@@ -133,8 +138,26 @@ public class Interpreter
         new("print",
             args =>
             {
+                Console.Write((args.SingleOrDefault() ?? args).Pretty());
+                return 0;
+            },
+            "arg");
+
+    private static Function BuiltInPrintLine() =>
+        new("println",
+            args =>
+            {
                 Console.WriteLine((args.SingleOrDefault() ?? args).Pretty());
                 return 0;
+            },
+            "arg");
+
+    private static Function BuiltInFormat() =>
+        new("format",
+            args =>
+            {
+                var a = args.ToArray();
+                return string.Format((string)a[0], a.Skip(1).Select(o => (object)o.Pretty()).ToArray());
             },
             "arg");
 

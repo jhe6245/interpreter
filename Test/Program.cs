@@ -27,14 +27,14 @@ if (false) {
 }
 ";
 p = @"let math := 2 - 2
-print(math)
+println(math)
 math := 1 + 2 * (8 + 2)
-print(math)
-print(10^2)
-print(0-2)
+println(math)
+println(10^2)
+println(0-2)
+println(-2--2)
 let items := [1,2,3]
-print(items)
-print(len(items))
+println(format('len({0}) = {1}', items, len(items)))
 for(let i: items)
     print(i)
 ";
