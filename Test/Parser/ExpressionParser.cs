@@ -18,11 +18,11 @@ public class ExpressionParser : IParse<Expression> // math
         void Collect()
         {
             var o = operators.Pop();
-            var a = operands.Pop();
+            var latter = operands.Pop();
             if (o is BinaryOp)
-                operands.Push(new BiOperator(o.C.ToString(), a, operands.Pop()));
+                operands.Push(new BiOperator(o.C.ToString(), operands.Pop(), latter));
             else
-                operands.Push(new UnaryOperator(o.C.ToString(), a));
+                operands.Push(new UnaryOperator(o.C.ToString(), latter));
         }
 
         void HandleOp(Operator op)

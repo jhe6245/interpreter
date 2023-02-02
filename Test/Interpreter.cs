@@ -9,11 +9,10 @@ public class Interpreter
 
     public Interpreter()
     {
-        var builtIns = new Dictionary<string, object>
+        var builtIns = new[]
         {
-            ["print"] = BuiltInPrint(),
-            ["map"] = BuiltInMap()
-        };
+            BuiltInLen(), BuiltInMap(), BuiltInPrint()
+        }.ToDictionary(f => f.Name, f => (object)f);
 
         stack = new(new[] { builtIns, new() });
     }
@@ -67,7 +66,7 @@ public class Interpreter
                     Execute(c.Statement);
                 break;
             case Block b:
-                foreach(var s in b.Statements)
+                foreach (var s in b.Statements)
                     Execute(s);
                 break;
             case Iteration i:
@@ -77,6 +76,7 @@ public class Interpreter
                     stack.Peek()[i.Iterator] = item;
                     Execute(i.Statement);
                 }
+
                 break;
             default:
                 throw new InvalidOperationException();
@@ -129,54 +129,31 @@ public class Interpreter
         throw new InvalidOperationException();
     }
 
-    private Function BuiltInPrint()
-    {
-        return new Function("print",
-                            o =>
-                            {
-                                void Print(object obj)
-                                {
-                                    if (obj is IEnumerable<object> e)
-                                    {
-                                        Console.Write(Lang.ListBegin);
+    private static Function BuiltInPrint() =>
+        new("print",
+            args =>
+            {
+                Console.WriteLine((args.SingleOrDefault() ?? args).Pretty());
+                return 0;
+            },
+            "arg");
 
-                                        var x = true;
-                                        foreach (var item in e)
-                                        {
-                                            if (!x)
-                                                Console.Write(Lang.ListDelimit + " ");
-                                            x = false;
+    private Function BuiltInMap() =>
+        new("map",
+            args =>
+            {
+                if (args.ToArray() is not [IEnumerable<object> list, Function f])
+                    throw new ArgumentException();
 
-                                            Print(item);
-                                        }
+                return list.Select(v => Call(f, new[] { v }));
+            },
+            "list",
+            "f");
 
-                                        Console.Write(Lang.ListEnd);
-                                    }
-                                    else
-                                        Console.Write(obj);
-                                }
-
-                                Print(o.Single());
-                                Console.WriteLine();
-
-                                return 0;
-                            },
-                            "arg");
-    }
-
-    private Function BuiltInMap()
-    {
-        return new Function("map",
-                            args =>
-                            {
-                                if (args.ToArray() is not [IEnumerable<object> list, Function f])
-                                    throw new ArgumentException();
-
-                                return list.Select(v => Call(f, new[] { v }));
-                            },
-                            "list",
-                            "f");
-    }
+    private Function BuiltInLen() =>
+        new("len",
+            args => args.Cast<IEnumerable>().Single().Cast<object>().Count(), 
+            "list");
 
     private record Function(string Name, IEnumerable<string> Args, Func<IEnumerable<object>, object> F)
     {
