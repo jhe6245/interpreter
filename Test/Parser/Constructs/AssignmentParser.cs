@@ -9,7 +9,7 @@ public class AssignmentParser : IParse<Assignment>
     public IResult<IParsed<Assignment>> Accept(IEnumerable<Token> tokens)
     {
         var ts = tokens.ToArray();
-        if (ts is [IdentifierToken assignVar, OperatorToken { Text: ":=" }, ..])
+        if (ts is [IdentifierToken assignVar, LangOperatorToken { Text: ":=" }, ..])
         {
             return Expression().Accept(ts.Skip(2))
                                .FlatMap(e => new Assignment(assignVar.Text, e.Result).Ok(e.Remaining));

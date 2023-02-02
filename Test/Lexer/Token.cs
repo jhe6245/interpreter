@@ -12,18 +12,20 @@ public record BeginToken(char C) : Token(C.ToString());
 
 public record EndToken(char C) : Token(C.ToString());
 
-public abstract record MathToken(string Op) : Token(Op);
+public abstract record OperatorToken(string Op) : Token(Op);
 
-public record ArithmeticToken(string Op) : MathToken(Op);
+public record ArithmeticToken(string Op) : OperatorToken(Op);
+public record BooleanToken(string Op) : OperatorToken(Op);
+public record ComparisonToken(string Text) : OperatorToken(Text);
 
-public record BooleanToken(string Op) : MathToken(Op);
 
 public record ArrowToken(string Text) : Token(Text);
 
 public record KeywordToken(string Text) : Token(Text);
 
-public record OperatorToken(string Text) : Token(Text);
+public record LangOperatorToken(string Text) : Token(Text);
 
 public record EndStatementToken(string Text) : Token(Text);
 
 public record ListSepToken(string Text) : Token(Text);
+

@@ -34,11 +34,17 @@ public class Interpreter
 
             var (op, left) => (op, left, Eval(bo.Right)) switch
             {
-                ("+", double a, double b) => a + b,
-                ("-", double a, double b) => a - b,
-                ("/", double a, double b) => a / b,
-                ("*", double a, double b) => a * b,
-                ("^", double a, double b) => Math.Pow(a, b),
+                (Lang.Arithmetic.Add, double a, double b) => a + b,
+                (Lang.Arithmetic.Sub, double a, double b) => a - b,
+                (Lang.Arithmetic.Div, double a, double b) => a / b,
+                (Lang.Arithmetic.Mul, double a, double b) => a * b,
+                (Lang.Arithmetic.Pow, double a, double b) => Math.Pow(a, b),
+
+                (Lang.Comparison.GT, double a, double b) => a > b,
+                (Lang.Comparison.LT, double a, double b) => a < b,
+                (Lang.Comparison.GTE, double a, double b) => a >= b,
+                (Lang.Comparison.LTE, double a, double b) => a <= b,
+                (Lang.Comparison.EQ, double a, double b) => Math.Abs(a - b) / (Math.Abs(a) + Math.Abs(b)) < .5e-9,
 
                 _ => throw new InvalidOperationException()
             }

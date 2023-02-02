@@ -26,7 +26,7 @@ public class ParserBuilder
 
         expression = new ExpressionParser
         {
-            ValueExpression = new NonMathExpressionParser
+            ValueExpression = new ValueExpressionParser
             {
                 Lambda = new LambdaParser
                 {

@@ -2,7 +2,7 @@
 
 namespace Test.Parser.Constructs;
 
-public class ExpressionParser : IParse<IExpression> // math + bool logic
+public class ExpressionParser : IParse<IExpression> // math + boolean logic + comparisons
 {
     public required IParse<IExpression> ValueExpression { get; init; }
 
@@ -85,7 +85,7 @@ public class ExpressionParser : IParse<IExpression> // math + bool logic
         {
             var bp = (ts switch
             {
-                [MathToken { Text: var op }, ..] => new Binary(op).Ok(ts.Skip(1)),
+                [OperatorToken { Text: var op }, ..] => new Binary(op).Ok(ts.Skip(1)),
                 _ => ts[0].Err<Binary>()
             }).FlatMap(b => ParseBinaryOperand(b.Remaining).FlatMap(p => (b.Result, p.Result).Ok(p.Remaining)));
 
@@ -116,7 +116,7 @@ public class ExpressionParser : IParse<IExpression> // math + bool logic
                 _ => e.Remaining.First().Err<Parens>()
             }),
 
-            [MathToken { Op: Lang.Boolean.Not or Lang.Arithmetic.Sub } t, ..] => ParseBinaryOperand(ts.Skip(1))
+            [OperatorToken { Op: Lang.Boolean.Not or Lang.Arithmetic.Sub } t, ..] => ParseBinaryOperand(ts.Skip(1))
                 .FlatMap(e => new Unary(t.Op, e.Result).Ok(e.Remaining)),
             _ => ts[0].Err<BiOperand>()
         };
@@ -128,9 +128,12 @@ public class ExpressionParser : IParse<IExpression> // math + bool logic
 
         public int Precedence => Op switch
         {
-            Lang.Boolean.Or => -3,
-            Lang.Boolean.And => -2,
-            Lang.Boolean.Not => -1,
+            Lang.Boolean.Or => -5,
+            Lang.Boolean.And => -4,
+            Lang.Boolean.Not => -3,
+
+            Lang.Comparison.EQ => -2,
+            Lang.Comparison.LT or Lang.Comparison.GT or Lang.Comparison.LTE or Lang.Comparison.GTE => -1,
 
             Lang.Arithmetic.Add or Lang.Arithmetic.Sub => 1,
             Lang.Arithmetic.Mul or Lang.Arithmetic.Div => 2,

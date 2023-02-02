@@ -2,58 +2,21 @@
 using Test.Lexer;
 using Test.Parser;
 
-var p = @"
-if (true) {
-    print(true)
+var programs = new
+{
+    HelloWorld = @"print('hello world')",
+    Factorial = @"
+let fac := n -> {
+    let f := n
+    if(n > 2)
+        f := f * fac(n - 1)
+    f
 }
-let t := []
-print('hello world')
-let f := x -> x
-let x := 23
-x := 13
-x := f(x)
-print(x)
-let z := 'abc'
-x := []
-print(x)
-x := [1, 2]
-print(x)
-let plus3 := map(x, f)
-print(plus3)
-print(x -> y)
+print(fac(5))
+"
+};
 
-if (false) {
-    print(false)
-}
-";
-p = @"let math := 2 - 2
-println(math)
-math := 1 + 2 * (8 + 2)
-println(math)
-println(10^2)
-println(0-2)
-println(-2--2)
-let items := [1,2,3]
-println(format('len({0}) = {1}', items, len(items)))
-for(let i: items)
-    print(i)
-println()
-println(not true or true)
-println(((((true)))))
-";
-
-p = @"
-let choose := (cond, ifTrue, ifFalse) -> {
-    let result := ifFalse
-    if(cond)
-        result := ifTrue
-    result
-}
-println(choose(true, 'true', 'false'))
-println(choose(false, 'true', 'false'))
-";
-
-var ts = new Lexer().Lex(p).ToList();
+var ts = new Lexer().Lex(programs.Factorial).ToList();
 
 foreach (var (t, i) in ts.Select((t, i) => (t, i)))
     Console.WriteLine($"{i,10}: {t}");

@@ -34,27 +34,41 @@ public class Lexer
 
                 case ':':
                     reader.Read();
-                    if (reader.TryPeek(out var next) && next == '=')
+                    if (reader.TryPeek(out var n1) && n1 == '=')
                     {
                         reader.Read();
-                        yield return new OperatorToken(":=");
+                        yield return new LangOperatorToken(":=");
                         break;
                     }
 
-                    yield return new OperatorToken(":");
+                    yield return new LangOperatorToken(":");
                     break;
 
-                case { } when "(<[{".Contains(character):
+                case '<':
+                case '>':
+                    reader.Read();
+                    if (reader.TryPeek(out var n2) && n2 == '=')
+                    {
+                        reader.Read();
+                        yield return new ComparisonToken(character + "=");
+                    }
+                    else
+                    {
+                        yield return new ComparisonToken(character.ToString());
+                    }
+                    break;
+
+                case { } when "([{".Contains(character):
                     reader.Read();
                     yield return new BeginToken(character);
                     break;
 
-                case { } when ")>]}".Contains(character):
+                case { } when ")]}".Contains(character):
                     reader.Read();
                     yield return new EndToken(character);
                     break;
 
-                case { } when "+-*/^".Contains(character):
+                case { } when Lang.Arithmetic.Contains(character.ToString()):
                     reader.Read();
                     if (character == '-')
                     {

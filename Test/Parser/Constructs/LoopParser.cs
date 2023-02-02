@@ -14,7 +14,7 @@ public class LoopParser : IParse<Iteration>
         if (ts is not
             [
                 KeywordToken { Text: Lang.Keyword.For }, BeginToken { Text: Lang.ControlStructureArgBegin },
-                KeywordToken { Text: Lang.Keyword.DeclareVar }, IdentifierToken id, OperatorToken { Text: ":" }, ..
+                KeywordToken { Text: Lang.Keyword.DeclareVar }, IdentifierToken id, LangOperatorToken { Text: ":" }, ..
             ]) return ts[0].Err<Iteration>();
         ts.RemoveRange(0, 5);
 

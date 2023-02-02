@@ -2,6 +2,20 @@
 
 public static class Lang
 {
+    public static class Comparison
+    {
+        public const string GT = ">";
+        public const string LT = "<";
+        public const string GTE = ">=";
+        public const string LTE = "<=";
+        public const string EQ = "=";
+
+        public static bool Contains(string str) => new[]
+        {
+            GT, LT, GTE, LTE, EQ
+        }.Contains(str);
+    }
+
     public static class Arithmetic
     {
         public const string Pow = "^";
@@ -44,8 +58,6 @@ public static class Lang
             If, For
         }.Contains(str);
     }
-
-    public const string Equal = "=";
 
     public const string Assign = ":=";
     

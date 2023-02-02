@@ -2,7 +2,7 @@
 
 namespace Test.Parser.Constructs;
 
-public class NonMathExpressionParser : IParse<IExpression> // called from math parser
+public class ValueExpressionParser : IParse<IExpression>
 {
     public required IParse<Lambda> Lambda { get; set; }
     public required IParse<Invocation> Invocation { get; init; }
