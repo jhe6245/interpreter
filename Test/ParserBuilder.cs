@@ -1,4 +1,5 @@
 ﻿using Test.Parser;
+using Test.Parser.Constructs;
 
 namespace Test;
 
@@ -21,7 +22,7 @@ public class ParserBuilder
 
         expression = new ExpressionParser
         {
-            Value = new NonMathExpressionParser
+            ValueExpression = new NonMathExpressionParser
             {
                 List = new ListParser
                 {
