@@ -1,4 +1,5 @@
-﻿using Test.Parser;
+﻿using System.Collections;
+using Test.Parser;
 
 namespace Test;
 
@@ -68,6 +69,14 @@ public class Interpreter
             case Block b:
                 foreach(var s in b.Statements)
                     Execute(s);
+                break;
+            case Iteration i:
+                var enumerable = ((IEnumerable)Eval(i.Enumerable)).Cast<object>();
+                foreach (var item in enumerable)
+                {
+                    stack.Peek()[i.Iterator] = item;
+                    Execute(i.Statement);
+                }
                 break;
             default:
                 throw new InvalidOperationException();

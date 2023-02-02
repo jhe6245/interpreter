@@ -30,6 +30,8 @@ p = @"let math := 2 - 2
 print(math)
 math := 1 + 2 * (8 + 2)
 print(math)
+for(let i: [1,2,3])
+    print(i)
 ";
 
 var ts = new Lexer().Lex(p).ToList();
