@@ -13,10 +13,17 @@ let fac := n -> {
     f
 }
 print(fac(5))
+",
+    Operators = @"
+println(true = true)
+println(3 < 5)
+println(3 <= 5)
+println(3 > 5)
+println(3 >= 5)
 "
 };
 
-var ts = new Lexer().Lex(programs.Factorial).ToList();
+var ts = new Lexer().Lex(programs.Operators).ToList();
 
 foreach (var (t, i) in ts.Select((t, i) => (t, i)))
     Console.WriteLine($"{i,10}: {t}");

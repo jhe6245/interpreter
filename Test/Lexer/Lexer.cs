@@ -44,6 +44,11 @@ public class Lexer
                     yield return new LangOperatorToken(":");
                     break;
 
+                case '=':
+                    reader.Read();
+                    yield return new ComparisonToken(character.ToString());
+                    break;
+
                 case '<':
                 case '>':
                     reader.Read();

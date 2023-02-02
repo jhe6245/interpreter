@@ -46,6 +46,8 @@ public class Interpreter
                 (Lang.Comparison.LTE, double a, double b) => a <= b,
                 (Lang.Comparison.EQ, double a, double b) => Math.Abs(a - b) / (Math.Abs(a) + Math.Abs(b)) < .5e-9,
 
+                (Lang.Comparison.EQ, var a, var b) => Equals(a, b),
+
                 _ => throw new InvalidOperationException()
             }
         },
