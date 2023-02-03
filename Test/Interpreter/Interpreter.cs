@@ -9,16 +9,8 @@ public class Interpreter
 
     public Interpreter()
     {
-        var builtIns = new[]
-        {
-            BuiltIns.Len,
-            BuiltIns.Print,
-            BuiltIns.PrintLine,
-            BuiltIns.Format,
-            BuiltIns.Set,
-            BuiltIns.Get,
-            BuiltIns.Repeat,
-        }.ToDictionary(f => f.Name, f => (object)f);
+        var builtIns = BuiltIns.Functions.Enumerate<Function>()
+                               .ToDictionary(f => f.Name, f => (object)f);
 
         stack = new(new[] { builtIns, new() });
     }
@@ -138,7 +130,7 @@ public class Interpreter
                     if (Execute(i.Statement) is Returning r)
                         return r;
                 }
-
+                stack.Peek().Remove(i.Iterator);
                 break;
             case Loop l:
                 while (Eval(l.Condition) is true)
@@ -146,6 +138,7 @@ public class Interpreter
                     if (Execute(l.Body) is Returning r)
                         return r;
                 }
+
                 break;
             case IExpression x:
                 Eval(x);
@@ -204,9 +197,12 @@ public class Interpreter
     {
         object Value { get; }
     }
-    public abstract record Status;
-    public record Ok : Status;
-    public record OkWithValue(object Value) : Status, IValuedStatus;
-    public record Returning(object Value) : Status, IValuedStatus;
 
+    public abstract record Status;
+
+    public record Ok : Status;
+
+    public record OkWithValue(object Value) : Status, IValuedStatus;
+
+    public record Returning(object Value) : Status, IValuedStatus;
 }

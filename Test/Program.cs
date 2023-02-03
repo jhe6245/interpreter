@@ -9,24 +9,26 @@ closures ?
 
 const string stdlib = @"
 let range := (offset, count) -> {
-    let result := repeat(count)
+    let result := []
     let i := 0
     loop(i < count) {
-        set(result, i, i + offset)
+        push(result, i + offset)
         i := i + 1
     }
     result
 }
 
 let map := (list, f) -> {
-    let result := repeat(len(list))
+    let result := []
     let i := 0
     for(let item: list) {
-        set(result, i, f(item))
+        push(result, f(item))
         i := i + 1
     }
     result
 }
+
+
 ";
 
 var programs = new
@@ -54,9 +56,19 @@ let f := x -> {
 print(f())
 ",
     Lists = @"
+let flatMap := (list, f) -> {
+    let result := []
+    for(let item: list)
+        for(let i: f(item))
+            push(result, i)
+    result
+}
+
 let list := [1,2,3]
 println(map(list, x -> -x))
 println(range(10, 5))
+println(map(list, x -> [x]))
+println(flatMap(list, x -> [x, x]))
 "
 };
 

@@ -30,7 +30,7 @@ public class BlockParser : IParse<Block>
             }
         }
 
-        if (statements[^1] is IExpression expr)
+        if (statements.Count > 0 && statements[^1] is IExpression expr)
             return new ExpressionBlock(statements.Take(statements.Count - 1), expr).Ok(ts.Skip(1));
 
         return new Block(statements).Ok(ts.Skip(1));
