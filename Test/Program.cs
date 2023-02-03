@@ -14,7 +14,7 @@ var programs = new
 let fac := n -> {
     if(n <= 2)
        return n
-    return n * fac(n - 1)
+    n * fac(n - 1)
 }
 print(fac(5))
 ",
@@ -27,7 +27,7 @@ println(3 >= 5)
 ",
     Test = @"
 let f := x -> {
-    return 10
+    10
 }
 print(f())
 "

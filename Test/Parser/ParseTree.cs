@@ -26,6 +26,6 @@ public record DoubleConditional(IExpression Condition, IStatement True, IStateme
 public record Iteration(string Iterator, IExpression Enumerable, IStatement Statement) : IStatement;
 
 public record Block(IEnumerable<IStatement> Statements) : IStatement;
-public record ExpressionBlock(IEnumerable<IStatement> Body, IExpression Return) : Block(Body.Append(Return)), IExpression;
+public record ExpressionBlock(IEnumerable<IStatement> Body, IExpression Return) : Block(Body), IExpression;
 
 public record Return(IExpression Expression) : IStatement;

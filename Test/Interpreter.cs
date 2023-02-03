@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using Test.Parser;
 
 namespace Test;
@@ -23,7 +24,7 @@ public class Interpreter
         //Arithmetic a => (double)Eval(a.Left) + (double)Eval(a.Right),
         Evaluation i => Resolve<object>(i.Identifier),
         ExpressionLambda l => new Function("λ", l.Parameters, _ => Eval(l.Body)),
-        BlockLambda b => new Function("λ", b.Parameters, _ => ExecEval(b.Body)),
+        BlockLambda b => new Function("λ", b.Parameters, _ => ExecEvalRequired(b.Body)),
         Invocation c => Call(c),
         ListInit l => l.Items.Select(Eval),
         BiOperator bo => (bo.Operator, Eval(bo.Left)) switch
@@ -58,7 +59,7 @@ public class Interpreter
             (Lang.Arithmetic.Sub, double x) => -x,
             _ => throw new InvalidOperationException()
         },
-        ExpressionBlock eb => ExecEval(eb),
+        ExpressionBlock eb => ExecEvalRequired(eb),
         _ => throw new InvalidOperationException()
     };
 
@@ -68,17 +69,10 @@ public class Interpreter
             Execute(statement);
     }
 
-    public object ExecEval(ExpressionBlock expressionBlock)
-    {
-        stack.Push(new());
-        foreach (var s in expressionBlock.Body)
-            Execute(s);
-        var ret = Eval(expressionBlock.Return);
-        stack.Pop();
-        return ret;
-    }
+    public object ExecEvalRequired(Block block) =>
+        ExecEval(block, out var ret) ? ret : throw new InvalidOperationException("no return value");
 
-    public object ExecEval(Block block)
+    public bool ExecEval(Block block, [NotNullWhen(true)] out object? value)
     {
         stack.Push(new());
         foreach (var s in block.Statements)
@@ -87,10 +81,19 @@ public class Interpreter
                 continue;
 
             stack.Pop();
-            return v;
+            value = v;
+            return true;
         }
 
-        throw new InvalidOperationException();
+        if (block is ExpressionBlock eBlock)
+        {
+            value = Eval(eBlock.Return);
+            return true;
+        }
+
+
+        value = null;
+        return false;
     }
 
     public abstract record Status;
