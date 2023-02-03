@@ -4,6 +4,7 @@ namespace Test.Parser.Constructs;
 
 public class StatementParser : IParse<IStatement>
 {
+    public required IParse<Return> Return { get; init; }
     public required IParse<Block> Block { get; init; }
     public required IParse<Initialization> Initialization { get; init; }
     public required IParse<Conditional> Conditional { get; init; }
@@ -16,6 +17,7 @@ public class StatementParser : IParse<IStatement>
 
         return ts switch
         {
+            _ when Return.Accept(ts) is IOk<IParsed<Return>> ok => ok,
             _ when Block.Accept(ts) is IOk<IParsed<Block>> ok => ok,
             _ when Initialization.Accept(ts) is IOk<IParsed<Initialization>> ok => ok,
             _ when Conditional.Accept(ts) is IOk<IParsed<Conditional>> ok => ok,

@@ -49,13 +49,15 @@ public static class Lang
         public const string False = "false";
         
         public const string If = "if";
+        public const string Else = "else";
         public const string For = "for";
+        public const string Return = "return";
 
         public static bool Contains(string str) => new[]
         {
             DeclareVar,
             True, False,
-            If, For
+            If, Else, For, Return
         }.Contains(str);
     }
 

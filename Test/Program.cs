@@ -2,15 +2,19 @@
 using Test.Lexer;
 using Test.Parser;
 
+/* todo:
+list accessors
+closures ?
+*/ 
+
 var programs = new
 {
     HelloWorld = @"print('hello world')",
     Factorial = @"
 let fac := n -> {
-    let f := n
-    if(n > 2)
-        f := f * fac(n - 1)
-    f
+    if(n <= 2)
+       return n
+    return n * fac(n - 1)
 }
 print(fac(5))
 ",
@@ -20,10 +24,16 @@ println(3 < 5)
 println(3 <= 5)
 println(3 > 5)
 println(3 >= 5)
+",
+    Test = @"
+let f := x -> {
+    return 10
+}
+print(f())
 "
 };
 
-var ts = new Lexer().Lex(programs.Operators).ToList();
+var ts = new Lexer().Lex(programs.Factorial).ToList();
 
 foreach (var (t, i) in ts.Select((t, i) => (t, i)))
     Console.WriteLine($"{i,10}: {t}");

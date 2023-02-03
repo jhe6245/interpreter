@@ -118,6 +118,7 @@ public class ExpressionParser : IParse<IExpression> // math + boolean logic + co
 
             [OperatorToken { Op: Lang.Boolean.Not or Lang.Arithmetic.Sub } t, ..] => ParseBinaryOperand(ts.Skip(1))
                 .FlatMap(e => new Unary(t.Op, e.Result).Ok(e.Remaining)),
+
             _ => ts[0].Err<BiOperand>()
         };
     }

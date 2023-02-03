@@ -14,7 +14,7 @@ public class ParserBuilder
         {
             Expression = () => expression!
         };
-        var conditional = new IfParser
+        var conditional = new ConditionalParser
         {
             Expression = () => expression!,
             Stmt = () => stmt!
@@ -30,6 +30,7 @@ public class ParserBuilder
             {
                 Lambda = new LambdaParser
                 {
+                    Block = block,
                     Expression = () => expression!
                 },
                 List = new ListParser
@@ -47,6 +48,7 @@ public class ParserBuilder
 
         stmt = new StatementParser
         {
+            Return = new ReturnParser { Expression = expression },
             Conditional = conditional,
             Block = block,
             Initialization = new InitParser { Assignment = assignment },

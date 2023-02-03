@@ -12,6 +12,9 @@ public static class Parsed
 
     public static IResult<IParsed<T>> Err<T>(this Token t) =>
         Result.Err<IParsed<T>>(t);
+
+    public static IResult<IParsed<T2>> Chain<T1, T2>(this IResult<IParsed<T1>> result, Func<T1, IList<Token>, IResult<IParsed<T2>>> f)
+        => result.FlatMap(r => f(r.Result, r.Remaining.ToList()));
 }
 
 public interface IParsed<out T>

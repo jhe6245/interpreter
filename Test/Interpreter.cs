@@ -22,7 +22,8 @@ public class Interpreter
         Const c => c.Value is string s && double.TryParse(s, out var d) ? d : c.Value,
         //Arithmetic a => (double)Eval(a.Left) + (double)Eval(a.Right),
         Evaluation i => Resolve<object>(i.Identifier),
-        Lambda l => new Function("λ", l.Parameters, _ => Eval(l.Body)),
+        ExpressionLambda l => new Function("λ", l.Parameters, _ => Eval(l.Body)),
+        BlockLambda b => new Function("λ", b.Parameters, _ => ExecEval(b.Body)),
         Invocation c => Call(c),
         ListInit l => l.Items.Select(Eval),
         BiOperator bo => (bo.Operator, Eval(bo.Left)) switch
@@ -77,10 +78,32 @@ public class Interpreter
         return ret;
     }
 
-    public void Execute(IStatement statement)
+    public object ExecEval(Block block)
+    {
+        stack.Push(new());
+        foreach (var s in block.Statements)
+        {
+            if (Execute(s) is not Returning { Value: var v })
+                continue;
+
+            stack.Pop();
+            return v;
+        }
+
+        throw new InvalidOperationException();
+    }
+
+    public abstract record Status;
+    public record Next : Status;
+    public record Returning(object Value) : Status;
+    
+
+    public Status Execute(IStatement statement)
     {
         switch (statement)
         {
+            case Return ret:
+                return new Returning(Eval(ret.Expression));
             case Initialization init:
                 SetNew(init.Identifier, Eval(init.Expression));
                 break;
@@ -90,13 +113,19 @@ public class Interpreter
             case Invocation c:
                 Call(c);
                 break;
-            case Conditional c:
+            case SingleConditional c:
                 if (Eval(c.Condition) is true)
-                    Execute(c.Statement);
+                    return Execute(c.Statement);
+                break;
+            case DoubleConditional c:
+                Execute(Eval(c.Condition) is true ? c.True : c.False);
                 break;
             case Block b:
                 foreach (var s in b.Statements)
-                    Execute(s);
+                {
+                    if (Execute(s) is Returning r)
+                        return r;
+                }
                 break;
             case Iteration i:
                 var enumerable = ((IEnumerable)Eval(i.Enumerable)).Cast<object>();
@@ -109,12 +138,16 @@ public class Interpreter
                         ReSet(i.Iterator, item);
 
                     initIterator = false;
-                    Execute(i.Statement);
+
+                    if (Execute(i.Statement) is Returning r)
+                        return r;
                 }
                 break;
             default:
                 throw new InvalidOperationException();
         }
+
+        return new Next();
     }
 
     private object Call(Function f, IEnumerable<object> args)

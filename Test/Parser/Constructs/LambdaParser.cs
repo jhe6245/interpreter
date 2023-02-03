@@ -4,6 +4,7 @@ namespace Test.Parser.Constructs;
 
 public class LambdaParser : IParse<Lambda>
 {
+    public required IParse<Block> Block { get; init; }
     public required Func<IParse<IExpression>> Expression { get; init; }
 
     public IResult<IParsed<Lambda>> Accept(IEnumerable<Token> tokens)
@@ -12,13 +13,21 @@ public class LambdaParser : IParse<Lambda>
 
         if (ts is [IdentifierToken { Text: var single }, ArrowToken, ..])
         {
-            return Expression().Accept(ts.Skip(2))
-                               .FlatMap(e => new Lambda(new[] { single }, e.Result).Ok(e.Remaining));
+            if (Expression().Accept(ts.Skip(2))
+                            .FlatMap(e => new ExpressionLambda(new[] { single }, e.Result).Ok(e.Remaining))
+                            is IOk<IParsed<ExpressionLambda>> ok)
+            {
+                return ok;
+            }
+
+            return Block.Accept(ts.Skip(2))
+
+                          .FlatMap(b => new BlockLambda(new[] { single }, b.Result).Ok(b.Remaining));
         }
 
 
         if (ts is not [BeginToken { C: '(' }, ..])
-            return ts[0].Err<Lambda>();
+            return ts[0].Err<ExpressionLambda>();
 
         var parameters = new List<string>();
 
@@ -28,14 +37,22 @@ public class LambdaParser : IParse<Lambda>
             switch (ts)
             {
                 case [EndToken { C: ')' }, ArrowToken, ..]:
-                    return Expression().Accept(ts.Skip(2))
-                                       .FlatMap(e => new Lambda(parameters, e.Result).Ok(e.Remaining));
+                    if (Expression().Accept(ts.Skip(2))
+                                    .FlatMap(e => new ExpressionLambda(parameters, e.Result).Ok(e.Remaining))
+                        is IOk<IParsed<ExpressionLambda>> ok)
+                    {
+                        return ok;
+                    }
+
+                    return Block.Accept(ts.Skip(2))
+
+                                  .FlatMap(b => new BlockLambda(parameters, b.Result).Ok(b.Remaining));
                 case [IdentifierToken { Text: var parameter }, ..]:
                     parameters.Add(parameter);
                     ts.RemoveAt(0);
                     break;
                 default:
-                    return ts[0].Err<Lambda>();
+                    return ts[0].Err<ExpressionLambda>();
             }
 
             switch (ts)
@@ -44,7 +61,7 @@ public class LambdaParser : IParse<Lambda>
                     ts.RemoveAt(0);
                     break;
                 case not [EndToken { C: ')' }, ArrowToken, ..]:
-                    return ts[0].Err<Lambda>();
+                    return ts[0].Err<ExpressionLambda>();
             }
         }
     }
