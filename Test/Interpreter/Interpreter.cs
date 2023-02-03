@@ -1,8 +1,7 @@
 ﻿using System.Collections;
-using System.Diagnostics.CodeAnalysis;
 using Test.Parser;
 
-namespace Test;
+namespace Test.Interpreter;
 
 public class Interpreter
 {
@@ -12,8 +11,13 @@ public class Interpreter
     {
         var builtIns = new[]
         {
-            BuiltInLen(), BuiltInPrint(), BuiltInPrintLine(), BuiltInFormat(), BuiltInSet(), BuiltInGet(),
-            BuiltInRepeat()
+            BuiltIns.Len,
+            BuiltIns.Print,
+            BuiltIns.PrintLine,
+            BuiltIns.Format,
+            BuiltIns.Set,
+            BuiltIns.Get,
+            BuiltIns.Repeat,
         }.ToDictionary(f => f.Name, f => (object)f);
 
         stack = new(new[] { builtIns, new() });
@@ -128,7 +132,7 @@ public class Interpreter
                         SetNew(i.Iterator, item);
                     else
                         ReSet(i.Iterator, item);
-                    
+
                     initIterator = false;
 
                     if (Execute(i.Statement) is Returning r)
@@ -196,72 +200,6 @@ public class Interpreter
         throw new InvalidOperationException();
     }
 
-    private static Function BuiltInPrint() =>
-        new("print",
-            args =>
-            {
-                Console.Write((args.SingleOrDefault() ?? args).Pretty());
-                return 0;
-            },
-            "arg");
-
-    private static Function BuiltInPrintLine() =>
-        new("println",
-            args =>
-            {
-                Console.WriteLine((args.SingleOrDefault() ?? args).Pretty());
-                return 0;
-            },
-            "arg");
-
-    private static Function BuiltInFormat() =>
-        new("format",
-            args =>
-            {
-                var a = args.ToArray();
-                return string.Format((string)a[0], a.Skip(1).Select(o => (object)o.Pretty()).ToArray());
-            },
-            "arg");
-
-    private Function BuiltInLen() =>
-        new("len",
-            args => (double)args.Cast<IEnumerable>().Single().Cast<object>().Count(),
-            "list");
-
-    private Function BuiltInGet()
-        => new("get",
-               args =>
-               {
-                   if (args.ToArray() is [IEnumerable list, double idx])
-                       return list.Cast<object>().ElementAt((int)idx);
-
-                   throw new ArgumentException();
-               },
-               "list",
-               "idx");
-
-    private Function BuiltInSet()
-        => new("set",
-               args =>
-               {
-                   if (args.ToArray() is [IList list, double idx, var v])
-                       return list[(int)idx] = v; 
-                   throw new ArgumentException();
-               },
-               "list",
-               "idx",
-               "value");
-
-    private Function BuiltInRepeat() =>
-        new("repeat",
-            args => args.ToArray() switch
-            {
-                [double count] => Enumerable.Repeat<object>(null!, (int)count).ToList(),
-                [double count, { } value] => Enumerable.Repeat(value, (int)count).ToList(),
-                _ => throw new ArgumentException()
-            },
-            "count", "value");
-
     public interface IValuedStatus
     {
         object Value { get; }
@@ -271,20 +209,4 @@ public class Interpreter
     public record OkWithValue(object Value) : Status, IValuedStatus;
     public record Returning(object Value) : Status, IValuedStatus;
 
-    private record Function(string Name, IEnumerable<string> Args, Func<IEnumerable<object>, object> F)
-    {
-        public Function(string identifier, Func<IEnumerable<object>, object> f, params string[] args) : this(
-            identifier,
-            args,
-            f)
-        {
-        }
-
-        public object this[IEnumerable<object> args] => F(args);
-
-        public static implicit operator Func<IEnumerable<object>, object>(Function f) => f.F;
-
-        public override string ToString() =>
-            $"{Name}{Lang.ArgListBegin}{string.Join(Lang.ArgListDelimit + " ", Args)}{Lang.ArgListEnd}";
-    }
 }
