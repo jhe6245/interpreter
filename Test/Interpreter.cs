@@ -12,7 +12,7 @@ public class Interpreter
     {
         var builtIns = new[]
         {
-            BuiltInLen(), BuiltInMap(), BuiltInPrint(), BuiltInPrintLine(), BuiltInFormat(), BuiltInSet(), BuiltInGet(),
+            BuiltInLen(), BuiltInPrint(), BuiltInPrintLine(), BuiltInFormat(), BuiltInSet(), BuiltInGet(),
             BuiltInRepeat()
         }.ToDictionary(f => f.Name, f => (object)f);
 
@@ -22,10 +22,10 @@ public class Interpreter
     public object Eval(IExpression expr) => expr switch
     {
         Const c => c.Value is string s && double.TryParse(s, out var d) ? d : c.Value,
-        //Arithmetic a => (double)Eval(a.Left) + (double)Eval(a.Right),
+        Assignment a => ReSet(a.Identifier, Eval(a.Expression)),
         Evaluation i => Resolve<object>(i.Identifier),
         ExpressionLambda l => new Function("λ", l.Parameters, _ => Eval(l.Body)),
-        BlockLambda b => new Function("λ", b.Parameters, _ => ExecEvalRequired(b.Body)),
+        BlockLambda b => new Function("λ", b.Parameters, _ => ExecuteExpectingValue(b.Body)),
         Invocation c => Call(c),
         ListInit l => l.Items.Select(Eval).ToList(),
         BiOperator bo => (bo.Operator, Eval(bo.Left)) switch
@@ -60,7 +60,7 @@ public class Interpreter
             (Lang.Arithmetic.Sub, double x) => -x,
             _ => throw new InvalidOperationException()
         },
-        ExpressionBlock eb => ExecEvalRequired(eb),
+        ExpressionBlock eb => ExecuteExpectingValue(eb),
         _ => throw new InvalidOperationException()
     };
 
@@ -70,30 +70,31 @@ public class Interpreter
             Execute(statement);
     }
 
-    public object ExecEvalRequired(Block block) =>
-        ExecEval(block, out var ret) ? ret : throw new InvalidOperationException("no return value");
+    public object ExecuteExpectingValue(Block block) => ((IValuedStatus)Execute(block)).Value;
 
-    public bool ExecEval(Block block, [NotNullWhen(true)] out object? value)
+    public Status Execute(Block block)
     {
         stack.Push(new());
-        foreach (var s in block.Statements)
-        {
-            if (Execute(s) is not Returning { Value: var v })
-                continue;
 
+        try
+        {
+            foreach (var s in block.Statements)
+            {
+                var status = Execute(s);
+
+                if (status is Returning)
+                    return status;
+            }
+
+            if (block is ExpressionBlock eBlock)
+                return new OkWithValue(Eval(eBlock.Return));
+
+            return new Ok();
+        }
+        finally
+        {
             stack.Pop();
-            value = v;
-            return true;
         }
-
-        if (block is ExpressionBlock eBlock)
-        {
-            value = Eval(eBlock.Return);
-            return true;
-        }
-
-        value = null;
-        return false;
     }
 
 
@@ -106,9 +107,7 @@ public class Interpreter
             case Initialization init:
                 SetNew(init.Identifier, Eval(init.Expression));
                 break;
-            case Assignment a:
-                ReSet(a.Identifier, Eval(a.Expression));
-                break;
+
             case Invocation c:
                 Call(c);
                 break;
@@ -120,13 +119,7 @@ public class Interpreter
                 Execute(Eval(c.Condition) is true ? c.True : c.False);
                 break;
             case Block b:
-                foreach (var s in b.Statements)
-                {
-                    if (Execute(s) is Returning r)
-                        return r;
-                }
-
-                break;
+                return Execute(b);
             case Iteration i:
                 var enumerable = ((IEnumerable)Eval(i.Enumerable)).Cast<object>();
                 var initIterator = true;
@@ -136,7 +129,7 @@ public class Interpreter
                         SetNew(i.Iterator, item);
                     else
                         ReSet(i.Iterator, item);
-
+                    
                     initIterator = false;
 
                     if (Execute(i.Statement) is Returning r)
@@ -148,7 +141,7 @@ public class Interpreter
                 throw new InvalidOperationException();
         }
 
-        return new Next();
+        return new Ok();
     }
 
     private object Call(Function f, IEnumerable<object> args)
@@ -172,15 +165,12 @@ public class Interpreter
 
     private void SetNew<T>(string identifier, T value) => stack.Peek().Add(identifier, value!);
 
-    private void ReSet<T>(string identifier, T value)
+    private object ReSet<T>(string identifier, T value)
     {
         foreach (var frame in stack)
         {
             if (frame.ContainsKey(identifier))
-            {
-                frame[identifier] = value!;
-                return;
-            }
+                return frame[identifier] = value!;
         }
 
         throw new InvalidOperationException();
@@ -224,21 +214,9 @@ public class Interpreter
             },
             "arg");
 
-    private Function BuiltInMap() =>
-        new("map",
-            args =>
-            {
-                if (args.ToArray() is not [IEnumerable<object> list, Function f])
-                    throw new ArgumentException();
-
-                return list.Select(v => Call(f, new[] { v }));
-            },
-            "list",
-            "f");
-
     private Function BuiltInLen() =>
         new("len",
-            args => args.Cast<IEnumerable>().Single().Cast<object>().Count(),
+            args => (double)args.Cast<IEnumerable>().Single().Cast<object>().Count(),
             "list");
 
     private Function BuiltInGet()
@@ -267,19 +245,22 @@ public class Interpreter
 
     private Function BuiltInRepeat() =>
         new("repeat",
-            args =>
+            args => args.ToArray() switch
             {
-                if (args.ToArray() is [{ } value, double count])
-                    return Enumerable.Repeat(value, (int)count);
-                throw new ArgumentException();
+                [double count] => Enumerable.Repeat<object>(null!, (int)count).ToList(),
+                [double count, { } value] => Enumerable.Repeat(value, (int)count).ToList(),
+                _ => throw new ArgumentException()
             },
-            "value", "count");
+            "count", "value");
 
+    public interface IValuedStatus
+    {
+        object Value { get; }
+    }
     public abstract record Status;
-
-    public record Next : Status;
-
-    public record Returning(object Value) : Status;
+    public record Ok : Status;
+    public record OkWithValue(object Value) : Status, IValuedStatus;
+    public record Returning(object Value) : Status, IValuedStatus;
 
     private record Function(string Name, IEnumerable<string> Args, Func<IEnumerable<object>, object> F)
     {

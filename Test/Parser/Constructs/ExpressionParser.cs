@@ -39,8 +39,7 @@ public class ExpressionParser : IParse<IExpression> // math + boolean logic + co
                 HandleOp(new BinaryOp(op.Op));
                 HandleOperand(p);
             }
-
-            while (operands.Count > 1)
+            while (operators.Count > 0)
                 Collect();
         }
 
