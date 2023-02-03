@@ -30,10 +30,20 @@ let f := x -> {
     10
 }
 print(f())
+",
+    Lists = @"
+let list := [1,2,3]
+list := [4,5,6]
+let v := get(list, 1)
+println(v)
+println(set(list, 0, 10))
+list := repeat(0, 100)
+print(list)
+
 "
 };
 
-var ts = new Lexer().Lex(programs.Factorial).ToList();
+var ts = new Lexer().Lex(programs.Lists).ToList();
 
 foreach (var (t, i) in ts.Select((t, i) => (t, i)))
     Console.WriteLine($"{i,10}: {t}");

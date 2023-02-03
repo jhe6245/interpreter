@@ -12,7 +12,8 @@ public class Interpreter
     {
         var builtIns = new[]
         {
-            BuiltInLen(), BuiltInMap(), BuiltInPrint(), BuiltInPrintLine(), BuiltInFormat()
+            BuiltInLen(), BuiltInMap(), BuiltInPrint(), BuiltInPrintLine(), BuiltInFormat(), BuiltInSet(), BuiltInGet(),
+            BuiltInRepeat()
         }.ToDictionary(f => f.Name, f => (object)f);
 
         stack = new(new[] { builtIns, new() });
@@ -26,7 +27,7 @@ public class Interpreter
         ExpressionLambda l => new Function("λ", l.Parameters, _ => Eval(l.Body)),
         BlockLambda b => new Function("λ", b.Parameters, _ => ExecEvalRequired(b.Body)),
         Invocation c => Call(c),
-        ListInit l => l.Items.Select(Eval),
+        ListInit l => l.Items.Select(Eval).ToList(),
         BiOperator bo => (bo.Operator, Eval(bo.Left)) switch
         {
             (Lang.Boolean.Or, true) => true,
@@ -91,15 +92,10 @@ public class Interpreter
             return true;
         }
 
-
         value = null;
         return false;
     }
 
-    public abstract record Status;
-    public record Next : Status;
-    public record Returning(object Value) : Status;
-    
 
     public Status Execute(IStatement statement)
     {
@@ -129,13 +125,14 @@ public class Interpreter
                     if (Execute(s) is Returning r)
                         return r;
                 }
+
                 break;
             case Iteration i:
                 var enumerable = ((IEnumerable)Eval(i.Enumerable)).Cast<object>();
                 var initIterator = true;
                 foreach (var item in enumerable)
                 {
-                    if(initIterator)
+                    if (initIterator)
                         SetNew(i.Iterator, item);
                     else
                         ReSet(i.Iterator, item);
@@ -145,6 +142,7 @@ public class Interpreter
                     if (Execute(i.Statement) is Returning r)
                         return r;
                 }
+
                 break;
             default:
                 throw new InvalidOperationException();
@@ -240,8 +238,48 @@ public class Interpreter
 
     private Function BuiltInLen() =>
         new("len",
-            args => args.Cast<IEnumerable>().Single().Cast<object>().Count(), 
+            args => args.Cast<IEnumerable>().Single().Cast<object>().Count(),
             "list");
+
+    private Function BuiltInGet()
+        => new("get",
+               args =>
+               {
+                   if (args.ToArray() is [IEnumerable list, double idx])
+                       return list.Cast<object>().ElementAt((int)idx);
+
+                   throw new ArgumentException();
+               },
+               "list",
+               "idx");
+
+    private Function BuiltInSet()
+        => new("set",
+               args =>
+               {
+                   if (args.ToArray() is [IList list, double idx, var v])
+                       return list[(int)idx] = v; 
+                   throw new ArgumentException();
+               },
+               "list",
+               "idx",
+               "value");
+
+    private Function BuiltInRepeat() =>
+        new("repeat",
+            args =>
+            {
+                if (args.ToArray() is [{ } value, double count])
+                    return Enumerable.Repeat(value, (int)count);
+                throw new ArgumentException();
+            },
+            "value", "count");
+
+    public abstract record Status;
+
+    public record Next : Status;
+
+    public record Returning(object Value) : Status;
 
     private record Function(string Name, IEnumerable<string> Args, Func<IEnumerable<object>, object> F)
     {
