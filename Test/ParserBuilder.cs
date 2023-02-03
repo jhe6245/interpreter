@@ -53,7 +53,8 @@ public class ParserBuilder
             Block = block,
             Initialization = new InitParser { Assignment = assignment },
             Expression = expression,
-            Iteration = new LoopParser { Expression = expression, Stmt = () => stmt! }
+            Iteration = new IterationParser { Expression = expression, Stmt = () => stmt! },
+            Loop = new LoopParser { Expression = expression, Statement = () => stmt! }
         };
     }
 

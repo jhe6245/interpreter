@@ -107,7 +107,6 @@ public class Interpreter
             case Initialization init:
                 SetNew(init.Identifier, Eval(init.Expression));
                 break;
-
             case Invocation c:
                 Call(c);
                 break;
@@ -136,6 +135,16 @@ public class Interpreter
                         return r;
                 }
 
+                break;
+            case Loop l:
+                while (Eval(l.Condition) is true)
+                {
+                    if (Execute(l.Body) is Returning r)
+                        return r;
+                }
+                break;
+            case IExpression x:
+                Eval(x);
                 break;
             default:
                 throw new InvalidOperationException();

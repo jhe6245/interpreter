@@ -2,32 +2,23 @@
 
 namespace Test.Parser.Constructs;
 
-public class LoopParser : IParse<Iteration>
+public class LoopParser : IParse<Loop>
 {
     public required IParse<IExpression> Expression { get; init; }
-    public required Func<IParse<IStatement>> Stmt { get; init; }
+    public required Func<IParse<IStatement>> Statement { get; init; }
 
-    public IResult<IParsed<Iteration>> Accept(IEnumerable<Token> tokens)
+    public IResult<IParsed<Loop>> Accept(IEnumerable<Token> tokens)
     {
-        var ts = tokens.ToList();
+        var ts = tokens.ToArray();
 
-        if (ts is not
-            [
-                KeywordToken { Text: Lang.Keyword.For }, BeginToken { Text: Lang.ControlStructureArgBegin },
-                KeywordToken { Text: Lang.Keyword.DeclareVar }, IdentifierToken id, LangOperatorToken { Text: ":" }, ..
-            ]) return ts[0].Err<Iteration>();
-        ts.RemoveRange(0, 5);
-
-        return Expression.Accept(ts).FlatMap(expr =>
-        {
-            ts = expr.Remaining.ToList();
-
-            if (ts is not [EndToken { C: ')' }, ..])
-                return ts[0].Err<Iteration>();
-
-            ts.RemoveAt(0);
-            return Stmt().Accept(ts)
-                         .FlatMap(stmt => new Iteration(id.Text, expr.Result, stmt.Result).Ok(stmt.Remaining));
-        });
+        return ts is [KeywordToken { Text: Lang.Keyword.Loop }, BeginToken { C: '(' }, ..]
+            ? Expression.Accept(ts.Skip(2)).Chain(
+                (cond, rem) =>
+                    rem is [EndToken { C: ')' }, ..]
+                        ? Statement().Accept(rem.Skip(1))
+                                   .FlatMap(body => new Loop(cond, body.Result)
+                                                .Ok(body.Remaining))
+                        : ts[0].Err<Loop>())
+            : ts[0].Err<Loop>();
     }
 }

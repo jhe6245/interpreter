@@ -3,11 +3,20 @@ using Test.Lexer;
 using Test.Parser;
 
 /* todo:
-list accessors
 closures ?
 */
 
-var stdlib = @"
+const string stdlib = @"
+let range := (offset, count) -> {
+    let result := repeat(count)
+    let i := 0
+    loop(i < count) {
+        set(result, i, i + offset)
+        i := i + 1
+    }
+    result
+}
+
 let map := (list, f) -> {
     let result := repeat(len(list))
     let i := 0
@@ -46,6 +55,7 @@ print(f())
     Lists = @"
 let list := [1,2,3]
 println(map(list, x -> -x))
+println(range(10, 5))
 "
 };
 
@@ -88,6 +98,10 @@ switch (parser.Accept(stdLibTokens))
         break;
 
     case IErr<IParsed<Test.Parser.Program>> e:
-        Console.WriteLine(e.Pretty());
+        foreach (var (t, i) in stdLibTokens.Select((t, i) => (t, i)))
+        {
+            Console.WriteLine($"{i,10}: {t}{(ReferenceEquals(t, e.Error) ? new string('<', 50) : "")}");
+        }
+        Console.WriteLine(e.Trace);
         break;
 }

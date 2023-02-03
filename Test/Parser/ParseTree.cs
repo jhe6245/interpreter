@@ -24,6 +24,7 @@ public abstract record Conditional(IExpression Condition) : IStatement;
 public record SingleConditional(IExpression Condition, IStatement Statement) : Conditional(Condition);
 public record DoubleConditional(IExpression Condition, IStatement True, IStatement False) : Conditional(Condition);
 public record Iteration(string Iterator, IExpression Enumerable, IStatement Statement) : IStatement;
+public record Loop(IExpression Condition, IStatement Body) : IStatement;
 
 public record Block(IEnumerable<IStatement> Statements) : IStatement;
 public record ExpressionBlock(IEnumerable<IStatement> Body, IExpression Return) : Block(Body), IExpression;
